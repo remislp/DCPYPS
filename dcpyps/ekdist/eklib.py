@@ -13,8 +13,8 @@ def moving_average(x, n):
 
 def moving_average_open_shut_Popen(opints, shints, window=50):
     # window : moving average interval
-    opma = moving_average(opints, window) # Moving average for open periods
-    shma = moving_average(shints, window) # Moving average for shut periods
+    opma = moving_average(opints, window)[window-1:] # Moving average for open periods
+    shma = moving_average(shints, window)[window-1:] # Moving average for shut periods
     poma = opma / (opma + shma) # Moving average for Popen
     return opma, shma, poma
 

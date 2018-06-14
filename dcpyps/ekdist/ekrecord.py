@@ -40,6 +40,16 @@ class SingleChannelRecord(object):
         self.rtint, self.rampl, self.rprop = self.itint, self.iampl, self.iprop
         self._set_periods()
         
+    def print_all_record(self):
+        for i in range(len(self.itint)):
+            print (i, self.itint[i], self.iampl[i], self.iprop[i])
+            
+    def print_resolved_intervals(self):
+        print('\n#########\nList of resolved intervals:\n')
+        for i in range(len(self.rtint)):
+            print (i+1, self.rtint[i]*1000, self.rampl[i], self.rprop[i])
+        print('\n###################\n\n')
+        
     def __repr__(self):
         """String representation of SingleChannelRecord instance."""
         if not self.is_loaded:
@@ -199,6 +209,8 @@ class SingleChannelRecord(object):
                 rampl.append(atemp / ttemp)
         else:
             rampl.append(0)
+            
+        
 
         self.rtint, self.rampl, self.rprop = rtint, rampl, rprops
 
@@ -222,14 +234,18 @@ class SingleChannelRecord(object):
 
         pint, pamp, popt = [], [], []
         # Remove first and last intervals if shut
-        while self.rampl[-1] == 0:
-            self.rtint = self.rtint[:-1]
-            self.rampl = self.rampl[:-1]
-            self.rprop = self.rprop[:-1]
         if self.rampl[0] == 0:
             self.rtint = self.rtint[1:]
             self.rampl = self.rampl[1:]
             self.rprop = self.rprop[1:]
+        if self.rtint[-1] < 0:
+            self.rtint = self.rtint[:-1]
+            self.rampl = self.rampl[:-1]
+            self.rprop = self.rprop[:-1]
+        while self.rampl[-1] == 0:
+            self.rtint = self.rtint[:-1]
+            self.rampl = self.rampl[:-1]
+            self.rprop = self.rprop[:-1]
 
         oint, oamp, oopt = self.rtint[0], self.rampl[0] * self.rtint[0], self.rprop[0]
         n = 1

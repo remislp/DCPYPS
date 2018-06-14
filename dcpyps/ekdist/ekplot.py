@@ -41,7 +41,7 @@ def plot_xlog_interval_histogram(intervals, tres, shut=False):
     fig = plt.figure(figsize=(8,3))
     ax = fig.add_subplot(121)
     dcplots.xlog_hist_data(ax, intervals, tres, shut)
-    print('Mean and SD of {0:d} open periods = {1:.6g} +/- {2:.6g} ms'.format
+    print('Mean and SD of {0:d} time periods = {1:.6g} +/- {2:.6g} ms'.format
           (len(intervals), np.average(intervals)*1000, np.std(intervals)*1000))
     print('\tRange from {0:.6g} to {1:.6g} ms'.format(min(intervals)*1000,
                                                   max(intervals)*1000))

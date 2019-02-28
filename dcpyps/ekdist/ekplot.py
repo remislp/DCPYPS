@@ -31,7 +31,7 @@ def plot_fitted_amplitude_histogram(rec, fc, n=2, nbins=20):
     long_opamp = eklib.amplitudes_openings_longer_Tr(rec, fc, n)
     fig = plt.figure(figsize=(6,3))
     ax = fig.add_subplot(111)
-    ax.hist(long_opamp, nbins, normed=True); #, 50
+    ax.hist(long_opamp, nbins, density=True); #, 50
     ax.set_xlim([0, 1.2 * max(long_opamp)])
     print('Range of amplitudes: {0:.3f} - {1:.3f}'.
           format(min(long_opamp), max(long_opamp)))

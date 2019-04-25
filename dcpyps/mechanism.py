@@ -446,7 +446,7 @@ class Mechanism(object):
     '''
 
     def __init__(self, Rates, Cycles=[], fastblock=False, fastKB=None,
-        mtitle='', rtitle=''):
+        mtitle='', rtitle='', verbose=False):
 
         self.Rates = Rates
 
@@ -456,6 +456,7 @@ class Mechanism(object):
 
         self.mtitle = mtitle
         self.rtitle = rtitle
+        self.verbose = verbose
 
         self._set_fastKB(fastKB)
 
@@ -621,7 +622,8 @@ class Mechanism(object):
         # check dictionary sanity:
         for effname, effvalue in effdict.items():
             if effname not in self._effdict.keys():
-                sys.stderr.write("DCPYPS: Warning: None of the rates depends on effector %s\n" % effname)
+                if self.verbose:
+                    sys.stderr.write("DCPYPS: Warning: None of the rates depends on effector %s\n" % effname)
 #                errmsg = "DCPYPS: None of the rates depends on effector %s\n" % effname
 #                raise RuntimeError(errmsg)
             else:

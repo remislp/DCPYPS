@@ -124,7 +124,9 @@ def optimal_deltas(theta, func, args):
     """ """
 
     Lcrit = 1.005 * -0.5 * SSD(theta, (func, args))[0]
-    deltas = 0.1 * theta
+    delta_factor = 0.01
+    print('using delta factor= ', delta_factor)
+    deltas = delta_factor * theta
     L = -0.5 * SSD(theta + deltas, (func, args))[0]
     if L > Lcrit:
         count = 0

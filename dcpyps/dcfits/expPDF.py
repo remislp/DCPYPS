@@ -55,7 +55,9 @@ def optimal_deltas(theta, LLfunc, args):
     """ """
 
     Lcrit = LLfunc(theta, args) + math.fabs(LLfunc(theta, args)*0.005)
-    deltas = 0.001 * theta
+    delta_factor = 0.0001
+    print('using deltas factor= ', delta_factor)
+    deltas = delta_factor * theta
     L = LLfunc(theta + deltas, args)
     if L < Lcrit:
         count = 0

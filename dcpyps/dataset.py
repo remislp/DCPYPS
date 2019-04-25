@@ -41,7 +41,7 @@ class SCRecord(object):
         else:
             self._set_resolution(np.amin(self.itint))
         if tcrit == None:
-            self._set_tcrit(np.amax(self.itint))
+            self._set_tcrit(np.amax(self.itint)+1.0)
         else:
             self._set_tcrit(tcrit)
         self.set_chs(self._tcrit)

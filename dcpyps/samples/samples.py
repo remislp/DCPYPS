@@ -226,6 +226,47 @@ def CCO():
 
     return  dcpyps.Mechanism(RateList, mtitle=mectitle, rtitle=ratetitle)
 
+def RFO():
+    """ Fully liganded branch of Flip mechanism:
+    Resting - Flipped - Open """
+    mectitle = 'R-F-O'
+    ratetitle = 'some numbers'
+    O  = dcpyps.State('A', 'F*', 50e-12)
+    F   = dcpyps.State('B', 'F', 0.0)
+    R    = dcpyps.State('C', 'R', 0.0)
+    RateList = [
+        dcpyps.Rate(500.0, O, F, name='alpha', limits=[1e-15,1e+7]),
+        dcpyps.Rate(90000.0, F, O, name='beta', limits=[1e-15,1e+7]), 
+        dcpyps.Rate(1500.0, F, R, name='gamma', limits=[1e-15,1e+7]),
+        dcpyps.Rate(15000, R, F, name='delta', limits=[1e-15,1e+10])
+        ]
+    return  dcpyps.Mechanism(RateList, mtitle=mectitle, rtitle=ratetitle)
+
+def RFFOO():
+    
+    mectitle = 'R-F-O-F-O'
+    ratetitle = 'based on rGlyRa1 glycine'
+
+    FS  = dcpyps.State('A', 'F*',  50e-12)
+    FFS = dcpyps.State('A', 'FF*', 50e-12)
+    F   = dcpyps.State('B', 'F',   0.0)
+    FF  = dcpyps.State('B', 'FF',  0.0)
+    R   = dcpyps.State('C', 'R',   0.0)
+
+    RateList = [
+         dcpyps.Rate(90000.0, FF, FFS, name='beta2', limits=[1e-15,1e+7]),
+         dcpyps.Rate(700.0, FFS, FF, name='alpha2', limits=[1e-15,1e+7]),
+         dcpyps.Rate(1600.0, FF, F, name='gamma2', limits=[1e-15,1e+7]),
+         dcpyps.Rate(13000, F, FF, name='delta2', limits=[1e-15,1e+10]),
+         dcpyps.Rate(12000.0, F, FS, name='beta1', limits=[1e-15,1e+7]),
+         dcpyps.Rate(1700.0, FS, F, name='alpha1', limits=[1e-15,1e+7]),
+         dcpyps.Rate(11600.0, F, R, name='gamma1', limits=[1e-15,1e+7]),
+         dcpyps.Rate(3000, R, F, name='delta1', limits=[1e-15,1e+10])
+         ]
+
+    return  dcpyps.Mechanism(RateList, mtitle=mectitle, rtitle=ratetitle)
+
+
 def CCOD():
     
     mectitle = 'C-C-O-D'

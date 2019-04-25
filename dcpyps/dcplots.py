@@ -6,6 +6,18 @@ __date__ = "$22-Feb-2016 09:13:22$"
 
 import math
 import numpy as np
+from numpy import linalg as nplin
+import matplotlib.pyplot as plt
+
+from HJCFIT.likelihood import QMatrix
+from HJCFIT.likelihood import missed_events_pdf, ideal_pdf, IdealG, eig
+
+import dcpyps.dataset
+from scalcs import scalcslib as scl
+from scalcs import qmatlib as qml
+from scalcs import pdfs
+from scalcs import scplotlib as scpl
+
 
 def xlog_hist_data(ax, X, tres, shut=True, unit='s'):
     """
@@ -167,3 +179,139 @@ def moving_average(x, n):
     a =  np.convolve(x, weights, mode='full')[:len(x)]
     a[:n] = a[n]
     return a
+
+def scalefac(tres, matrix, phiA):
+    """ Scale factor for ideal pdf. 
+    Note that to properly overlay ideal and missed-event corrected pdfs-
+    ideal pdf has to be scaled (need to renormailse to 1 the area under 
+    pdf from tres). """
+    k = matrix.shape[0]
+    if k == 1:
+        return 1 # / ((1 / eigs) * np.exp(-tres * eigs))
+    else:
+        eigs, M = eig(-matrix)
+        N = nplin.inv(M)
+        A, w = np.zeros((k, k, k)), np.zeros(k)
+        for i in range(k):
+            A[i] = np.dot(M[:, i].reshape(k, 1), N[i].reshape(1, k))
+        for i in range(k):
+            w[i] = np.dot(np.dot(np.dot(phiA, A[i]), (-matrix)), np.ones((k, 1)))
+        return 1 / np.sum((w / eigs) * np.exp(-tres * eigs))
+
+def plot_mean_open_next_shut(ax, mec, rates, rec, line='b-'):
+    mec.theta_unsqueeze(rates)
+    mec.set_eff('c', rec.conc)
+    sht, mp, mn = scpl.mean_open_next_shut(mec, rec.tres)
+    ax.plot(sht, mp, 'b-')
+    
+def plot_hist(ax, X, tres, tcrit=np.inf):
+    """
+    """
+    tout, yout, dt = prepare_xlog_hist(
+        np.array(X)[(np.array(X)<math.fabs(tcrit))], tres)
+    scale = len(X) * math.log10(dt) * math.log(10)
+    ax.semilogx(tout, np.sqrt(yout))
+    return scale 
+
+def add_pdfs(ax, mec, random_rates, conc, tres, scale, tcrit=np.inf, color='b'):
+    for rates in random_rates:
+        mec.theta_unsqueeze(rates)
+        mec.set_eff('c', conc)
+        if tcrit == np.inf:
+            t, ipdf, epdf = scpl.open_time_pdf(mec, tres)
+        else:
+            t, ipdf, epdf = scpl.shut_time_pdf(mec, tres, tmax=tcrit)
+        ax.semilogx(t, np.sqrt(t * epdf * scale), color+'-')
+        
+def adjust_limits_titles(ax, conc, xmin, xmax, is_shut=False):
+    ax.set_xlim(xmin, xmax)
+#    ax.text(0.5, 0.2, 
+#        'concentration = {0:g} mM'.format(round(float(conc*1000), 6)))
+    ax.set_title('concentration = {0:g} mM'.format(round(float(conc*1000), 6)))
+    labels = ax.get_yticks()**2
+    ax.set_yticklabels([str(int(label)) for label in labels])
+    if is_shut:
+        ax.set_xlabel('Apparent shut period, s')
+    else:
+        ax.set_xlabel('Apparent open period, s')
+    ax.set_ylabel('Frequency density (square root)')
+    
+def composite_fit_results(mec, recs,ratesM=None, time_range=None, random_rates=None):
+    nrecs = len(recs)
+    fig = plt.figure(figsize = (15,4*nrecs))
+    for i in range(nrecs):
+
+        # Plot apparent open period histogram
+        ax1 = fig.add_subplot(nrecs, 3, i*3+1)
+        
+        scale = plot_hist(ax1, recs[i].opint, recs[i].tres)
+        
+        if random_rates is not None:
+            add_pdfs(ax1, mec, random_rates, recs[i].conc, recs[i].tres, scale)
+        
+        add_pdfs(ax1, mec, [ratesM], recs[i].conc, recs[i].tres, scale, color='r')
+        
+        adjust_limits_titles(ax1, recs[i].conc, 10e-6, 10, is_shut=False)
+
+        # Plot apparent shut period histogram
+        ax2 = fig.add_subplot(nrecs, 3, i*3+2)
+        scale = plot_hist(ax2, recs[i].shint, recs[i].tres, tcrit=math.fabs(recs[i].tcrit))
+        if random_rates is not None:
+            add_pdfs(ax2, mec, random_rates, recs[i].conc, recs[i].tres, scale, 
+                     tcrit=math.fabs(recs[i].tcrit))
+        add_pdfs(ax2, mec, [ratesM], recs[i].conc, recs[i].tres, scale, 
+                 tcrit=math.fabs(recs[i].tcrit), color='r')
+        adjust_limits_titles(ax2, recs[i].conc, 1e-5, 1, is_shut=True)
+
+        # correlation plots
+        #ax3 = fig.add_subplot(3, nrecs, 2*nrecs+i+1)
+        ax3 = fig.add_subplot(nrecs, 3, i*3+3)
+        mean_shut, mean_open, error = dcpyps.dataset.mean_open_shut_correlation(recs[i], time_range)
+        ax3.errorbar(mean_shut, mean_open, yerr=error,  fmt='o')
+        if random_rates is not None:
+            for rates in random_rates:
+                plot_mean_open_next_shut(ax3, mec, rates, recs[i], line='b-')
+        plot_mean_open_next_shut(ax3, mec, ratesM, recs[i], line='r-')
+        ax3.set_xscale('log')
+        ax3.set_xlabel('Mean apparent shut time, s')
+        ax3.set_ylabel('Mean adjacent open time, s')
+        ax3.set_ylim(0, 10e-3)
+        ax3.set_xlim(10e-6, 10)
+        labels = ax3.get_xticks()
+        labels = [int(label) if label >= 1 else label for label in labels]
+        ax3.set_xticklabels([str(label) for label in labels])
+
+    fig.tight_layout()
+    plt.show()
+    
+def figure_HJCFIT(recs, mec):
+    fig = plt.figure(figsize=(15,4*len(recs))) #(12,15))
+    for i in range(len(recs)):
+        mec.set_eff('c', recs[i].conc)
+        qmatrix = QMatrix(mec.Q, mec.kA)
+        idealG = IdealG(qmatrix)
+
+        # Plot apparent open period histogram
+        ax1 = fig.add_subplot(len(recs), 2, 2*i+1)
+
+        ipdf = ideal_pdf(qmatrix, shut=False) 
+
+        iscale = scalefac(recs[i].tres, qmatrix.aa, idealG.initial_vectors)
+
+        epdf = missed_events_pdf(qmatrix, recs[i].tres, nmax=2, shut=False)
+        xlog_hist_HJC_fit(ax1, recs[i].tres, recs[i].opint,
+                                   epdf, ipdf, iscale, shut=False)
+        ax1.set_title('concentration = {0:3f} mM'.format(recs[i].conc*1000))
+        ax1.set_xlim(10e-6, 1)
+
+        # Plot apparent shut period histogram
+        ax2 = fig.add_subplot(len(recs), 2, 2*i+2)
+        ipdf = ideal_pdf(qmatrix, shut=True)
+        iscale = scalefac(recs[i].tres, qmatrix.ff, idealG.final_vectors)
+        epdf = missed_events_pdf(qmatrix, recs[i].tres, nmax=2, shut=True)
+        xlog_hist_HJC_fit(ax2, recs[i].tres, recs[i].shint,
+                                   epdf, ipdf, iscale, tcrit=math.fabs(recs[i].tcrit))
+        ax2.set_title('concentration = {0:6f} mM'.format(recs[i].conc*1000))
+        ax2.set_xlim(10e-6, 1)
+
+    fig.tight_layout()

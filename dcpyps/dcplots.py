@@ -29,6 +29,22 @@ def xlog_hist_data(ax, X, tres, shut=True, unit='s'):
     ax.set_xlabel('Apparent {0} periods ({1})'.
         format('shut' if shut else 'open', unit))
     ax.set_ylabel('Square root of frequency density')
+
+def xlog_hist_data_multi(ax, X, tres, names, shut=True, unit='s', density=False):
+    """
+    Plot multiple dwell time histograms in log x and square root y.
+    """
+    for x, tr, name in zip(X, tres, names):
+        dfactor = 1.0
+        #if density: dfactor = 1.0 / len(x)
+        xout, yout, dx = prepare_xlog_hist(x, tr)
+        ax.semilogx(xout, np.sqrt(dfactor * yout), label=name)
+        ax.set_xlabel('Apparent {0} periods ({1})'.
+            format('shut' if shut else 'open', unit))
+        ax.set_ylabel('Square root of frequency density')
+    ax.legend(loc=1, borderaxespad=0.)
+
+
     
 def xlog_hist_HJC_fit(ax, tres, X=None, pdf=None, ipdf=None, iscale=None, 
                        shut=True, tcrit=None, legend=True, unit='s'):
